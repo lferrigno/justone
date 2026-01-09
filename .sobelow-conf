@@ -1,0 +1,10 @@
+[
+  verbose: false,
+  exit: "high",
+  format: "txt",
+  ignore: ["Config.CSP"],
+  ignore_files: [],
+  private: false,
+  skip: false,
+  router: "lib/justone_web/router.ex"
+]

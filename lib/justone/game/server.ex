@@ -60,24 +60,25 @@ defmodule Justone.Game.Server do
 
     if game do
       # Try to restore from saved state, otherwise create fresh state
-      state = case Game.restore_game_state(game_id) do
-        nil ->
-          %{
-            game: game,
-            phase: :waiting,
-            players: Game.list_players(game.id),
-            current_word: nil,
-            clues: %{},
-            revealed_clues: [],
-            used_word_ids: [],
-            guesser_index: 0,
-            last_guess: nil,
-            last_result: nil
-          }
+      state =
+        case Game.restore_game_state(game_id) do
+          nil ->
+            %{
+              game: game,
+              phase: :waiting,
+              players: Game.list_players(game.id),
+              current_word: nil,
+              clues: %{},
+              revealed_clues: [],
+              used_word_ids: [],
+              guesser_index: 0,
+              last_guess: nil,
+              last_result: nil
+            }
 
-        restored_state ->
-          restored_state
-      end
+          restored_state ->
+            restored_state
+        end
 
       # Schedule periodic state persistence
       schedule_persist()
@@ -206,13 +207,19 @@ defmodule Justone.Game.Server do
   @impl true
   def handle_call({:reveal_clues, session_id}, _from, state) do
     %{game: game, phase: phase} = state
+    guesser = get_current_guesser(state)
+    is_guesser = guesser && guesser.session_id == session_id
+    owner_is_guesser = guesser && guesser.session_id == game.owner_session_id
+    is_owner = game.owner_session_id == session_id
+    # Allow owner (if not guesser) OR any non-guesser (if owner is guesser)
+    can_reveal = (is_owner and not is_guesser) or (owner_is_guesser and not is_guesser)
 
     cond do
-      game.owner_session_id != session_id ->
-        {:reply, {:error, :not_owner}, state, @timeout}
-
       phase != :clue_comparison ->
         {:reply, {:error, :wrong_phase}, state, @timeout}
+
+      not can_reveal ->
+        {:reply, {:error, :not_authorized}, state, @timeout}
 
       true ->
         new_state = %{state | phase: :guessing}

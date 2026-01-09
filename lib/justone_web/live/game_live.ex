@@ -275,7 +275,7 @@ defmodule JustoneWeb.GameLive do
           disabled={@joining}
           class="w-full px-4 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white font-medium rounded-lg transition-colors text-lg"
         >
-          <%= if @joining, do: "Uniéndose...", else: "Unirse" %>
+          {if @joining, do: "Uniéndose...", else: "Unirse"}
         </button>
       </form>
     </div>
@@ -409,7 +409,9 @@ defmodule JustoneWeb.GameLive do
             <div class="text-4xl mb-2">✅</div>
             <p class="text-green-600 font-medium">¡Pista enviada!</p>
             <p class="text-gray-500 text-sm mt-2">
-              Esperando a los demás ({length(@game_state.clues_submitted)}/{length(@game_state.players) - 1})
+              Esperando a los demás ({length(@game_state.clues_submitted)}/{length(
+                @game_state.players
+              ) - 1})
             </p>
           </div>
         <% else %>
@@ -442,49 +444,74 @@ defmodule JustoneWeb.GameLive do
 
   defp clue_comparison(assigns) do
     is_owner = assigns.game_state.owner_session_id == assigns.session_id
-    assigns = assign(assigns, is_owner: is_owner)
+
+    is_guesser =
+      Enum.any?(assigns.game_state.players, fn p ->
+        p.session_id == assigns.session_id and p.is_guesser
+      end)
+
+    owner_is_guesser =
+      Enum.any?(assigns.game_state.players, fn p ->
+        p.session_id == assigns.game_state.owner_session_id and p.is_guesser
+      end)
+
+    # Owner can reveal, OR if owner is guesser, any non-guesser can reveal
+    can_reveal = (is_owner and not is_guesser) or (owner_is_guesser and not is_guesser)
+    assigns = assign(assigns, is_guesser: is_guesser, can_reveal: can_reveal)
 
     ~H"""
     <div class="bg-white rounded-2xl shadow-xl p-6">
-      <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">Comparando pistas</h2>
+      <%= if @is_guesser do %>
+        <div class="text-center">
+          <div class="text-6xl mb-4">🙈</div>
+          <h2 class="text-2xl font-bold text-gray-800 mb-2">¡No mires!</h2>
+          <p class="text-gray-500">Los demás están revisando las pistas duplicadas...</p>
+          <p class="text-gray-400 text-sm mt-4">Pronto te mostrarán las pistas válidas</p>
+        </div>
+      <% else %>
+        <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">Comparando pistas</h2>
 
-      <p class="text-gray-500 text-center mb-6">
-        Las pistas repetidas serán eliminadas
-      </p>
+        <p class="text-gray-500 text-center mb-6">
+          Las pistas repetidas serán eliminadas
+        </p>
 
-      <div class="space-y-3 mb-6">
-        <%= for clue <- @game_state.revealed_clues do %>
-          <div class={[
-            "p-4 rounded-xl flex justify-between items-center",
-            if(clue.is_duplicate, do: "bg-red-50 border-2 border-red-200", else: "bg-green-50 border-2 border-green-200")
-          ]}>
-            <div>
-              <span class="font-medium text-gray-700">{clue.player_nickname}:</span>
-              <span class={[
-                "ml-2 font-bold",
-                if(clue.is_duplicate, do: "text-red-500 line-through", else: "text-green-600")
-              ]}>
-                {clue.clue}
-              </span>
+        <div class="space-y-3 mb-6">
+          <%= for clue <- @game_state.revealed_clues do %>
+            <div class={[
+              "p-4 rounded-xl flex justify-between items-center",
+              if(clue.is_duplicate,
+                do: "bg-red-50 border-2 border-red-200",
+                else: "bg-green-50 border-2 border-green-200"
+              )
+            ]}>
+              <div>
+                <span class="font-medium text-gray-700">{clue.player_nickname}:</span>
+                <span class={[
+                  "ml-2 font-bold",
+                  if(clue.is_duplicate, do: "text-red-500 line-through", else: "text-green-600")
+                ]}>
+                  {clue.clue}
+                </span>
+              </div>
+              <%= if clue.is_duplicate do %>
+                <span class="text-red-500 text-sm">Duplicada</span>
+              <% end %>
             </div>
-            <%= if clue.is_duplicate do %>
-              <span class="text-red-500 text-sm">Duplicada</span>
-            <% end %>
+          <% end %>
+        </div>
+
+        <%= if @can_reveal do %>
+          <button
+            phx-click="reveal_clues"
+            class="w-full px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors text-lg"
+          >
+            Mostrar pistas al adivinador
+          </button>
+        <% else %>
+          <div class="text-center text-gray-500 py-4">
+            Esperando al creador para continuar...
           </div>
         <% end %>
-      </div>
-
-      <%= if @is_owner do %>
-        <button
-          phx-click="reveal_clues"
-          class="w-full px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors text-lg"
-        >
-          Mostrar pistas al adivinador
-        </button>
-      <% else %>
-        <div class="text-center text-gray-500 py-4">
-          Esperando al creador para continuar...
-        </div>
       <% end %>
     </div>
     """
@@ -498,7 +525,7 @@ defmodule JustoneWeb.GameLive do
     ~H"""
     <div class="bg-white rounded-2xl shadow-xl p-6">
       <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">
-        <%= if @is_guesser, do: "¡Tu turno de adivinar!", else: "Esperando respuesta..." %>
+        {if @is_guesser, do: "¡Tu turno de adivinar!", else: "Esperando respuesta..."}
       </h2>
 
       <div class="bg-indigo-50 rounded-xl p-4 mb-6">

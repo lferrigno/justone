@@ -185,7 +185,9 @@ defmodule Justone.GameTest do
 
       {:ok, _} = Game.create_clue(%{game_id: game.id, player_id: p1.id, clue: "mismo", round: 1})
       {:ok, _} = Game.create_clue(%{game_id: game.id, player_id: p2.id, clue: "MISMO", round: 1})
-      {:ok, _} = Game.create_clue(%{game_id: game.id, player_id: p3.id, clue: "diferente", round: 1})
+
+      {:ok, _} =
+        Game.create_clue(%{game_id: game.id, player_id: p3.id, clue: "diferente", round: 1})
 
       {:ok, duplicate_ids} = Game.mark_duplicate_clues(game.id, 1)
 
@@ -208,7 +210,11 @@ defmodule Justone.GameTest do
       %{game: game, word: word, players: [p1, p2]}
     end
 
-    test "save_game_state/2 saves state to database", %{game: game, word: word, players: [p1, _p2]} do
+    test "save_game_state/2 saves state to database", %{
+      game: game,
+      word: word,
+      players: [p1, _p2]
+    } do
       state = %{
         game: game,
         phase: :clue_submission,
@@ -283,7 +289,11 @@ defmodule Justone.GameTest do
       assert Game.restore_game_state(game.code) == nil
     end
 
-    test "list_recoverable_games/0 returns playing games with snapshots", %{game: game, word: word, players: [p1, _p2]} do
+    test "list_recoverable_games/0 returns playing games with snapshots", %{
+      game: game,
+      word: word,
+      players: [p1, _p2]
+    } do
       state = %{
         game: game,
         phase: :clue_submission,

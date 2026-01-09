@@ -4,8 +4,9 @@ defmodule Justone.Game do
   """
 
   import Ecto.Query, warn: false
+
+  alias Justone.Game.{Clue, Game, Player, Word}
   alias Justone.Repo
-  alias Justone.Game.{Game, Player, Word, Clue}
 
   # Games
 
@@ -254,10 +255,11 @@ defmodule Justone.Game do
   defp serialize_clues(clues) when is_map(clues) do
     clues
     |> Enum.map(fn {player_id, clue_data} ->
-      {player_id, %{
-        "clue" => clue_data.clue,
-        "player_id" => clue_data.player.id
-      }}
+      {player_id,
+       %{
+         "clue" => clue_data.clue,
+         "player_id" => clue_data.player.id
+       }}
     end)
     |> Enum.into(%{})
   end
@@ -267,11 +269,13 @@ defmodule Justone.Game do
   # Deserialize stored map back to GenServer state
   defp deserialize_state(snapshot, game) do
     players = list_players(game.id)
-    current_word = if snapshot["current_word_id"] do
-      Repo.get(Word, snapshot["current_word_id"])
-    else
-      game.current_word
-    end
+
+    current_word =
+      if snapshot["current_word_id"] do
+        Repo.get(Word, snapshot["current_word_id"])
+      else
+        game.current_word
+      end
 
     %{
       game: game,

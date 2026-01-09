@@ -29,25 +29,27 @@ defmodule Justone.Game.Recovery do
   defp recover_games do
     games = Game.list_recoverable_games()
 
-    if length(games) > 0 do
-      Logger.info("Recovering #{length(games)} game(s) from persisted state...")
+    case games do
+      [] ->
+        Logger.debug("No games to recover")
 
-      Enum.each(games, fn game ->
-        case ServerSupervisor.start_game_server(game.code) do
-          {:ok, _pid} ->
-            Logger.info("Recovered game #{game.code}")
+      games ->
+        Logger.info("Recovering #{length(games)} game(s) from persisted state...")
+        Enum.each(games, &recover_game/1)
+        Logger.info("Game recovery complete")
+    end
+  end
 
-          {:error, {:already_started, _pid}} ->
-            Logger.debug("Game #{game.code} already running")
+  defp recover_game(game) do
+    case ServerSupervisor.start_game_server(game.code) do
+      {:ok, _pid} ->
+        Logger.info("Recovered game #{game.code}")
 
-          {:error, reason} ->
-            Logger.warning("Failed to recover game #{game.code}: #{inspect(reason)}")
-        end
-      end)
+      {:error, {:already_started, _pid}} ->
+        Logger.debug("Game #{game.code} already running")
 
-      Logger.info("Game recovery complete")
-    else
-      Logger.debug("No games to recover")
+      {:error, reason} ->
+        Logger.warning("Failed to recover game #{game.code}: #{inspect(reason)}")
     end
   end
 end

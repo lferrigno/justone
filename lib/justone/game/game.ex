@@ -50,7 +50,18 @@ defmodule Justone.Game.Game do
 
   def changeset(game, attrs) do
     game
-    |> cast(attrs, [:code, :status, :owner_session_id, :max_players, :current_round, :total_rounds, :current_word_id, :score, :state_snapshot, :last_activity_at])
+    |> cast(attrs, [
+      :code,
+      :status,
+      :owner_session_id,
+      :max_players,
+      :current_round,
+      :total_rounds,
+      :current_word_id,
+      :score,
+      :state_snapshot,
+      :last_activity_at
+    ])
     |> validate_required([:code, :owner_session_id])
     |> validate_inclusion(:status, ["waiting", "playing", "finished"])
     |> validate_number(:max_players, greater_than: 2, less_than_or_equal_to: @max_players_limit)

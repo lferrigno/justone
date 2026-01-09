@@ -17,9 +17,8 @@ config :justone, Justone.Repo,
 # watchers to your application. For example, we can use it
 # to bundle .js and .css sources.
 config :justone, JustoneWeb.Endpoint,
-  # Binding to loopback ipv4 address prevents access from other machines.
-  # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
-  http: [ip: {127, 0, 0, 1}],
+  # Binding to all interfaces to allow access from other machines in the network.
+  http: [ip: {0, 0, 0, 0}],
   check_origin: false,
   code_reloader: true,
   debug_errors: true,
